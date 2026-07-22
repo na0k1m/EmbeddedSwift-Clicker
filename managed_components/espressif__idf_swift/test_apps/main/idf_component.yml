@@ -1,4 +1,0 @@
-dependencies:
-  espressif/idf_swift:
-    version: "*"
-    override_path: "../.."
