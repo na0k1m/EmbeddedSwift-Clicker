@@ -6,7 +6,8 @@
 func main() {
     print("클릭커 프로젝트 시작! BOOT 버튼을 눌러보세요.")
 
-    let buttonPin = gpio_num_t(9) // XIAO ESP32-C6의 BOOT 버튼 핀
+//    let buttonPin = gpio_num_t(9) // XIAO ESP32-C6의 BOOT 버튼 핀
+    let buttonPin = gpio_num_t(0)
     
     // 1. 버튼 핀을 '입력(Input)' 모드로 설정
     gpio_reset_pin(buttonPin)
