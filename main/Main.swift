@@ -5,6 +5,16 @@
 @_cdecl("app_main")
 func main() {
     print("클릭커 프로젝트 시작! BOOT 버튼을 눌러보세요.")
+    
+    // 1. NVS (비휘발성 메모리) 초기화 - 블루투스 필수 조건
+    var ret = nvs_flash_init()
+    if ret == 259 /* ESP_ERR_NVS_NO_FREE_PAGES */ || ret == 260 /* ESP_ERR_NVS_NEW_VERSION_FOUND */ {
+        nvs_flash_erase()
+        ret = nvs_flash_init()
+    }
+    
+    // 2. NimBLE (블루투스 엔진) 초기화
+    nimble_port_init()
 
 //    let buttonPin = gpio_num_t(9) // XIAO ESP32-C6의 BOOT 버튼 핀
     let buttonPin = gpio_num_t(0)
