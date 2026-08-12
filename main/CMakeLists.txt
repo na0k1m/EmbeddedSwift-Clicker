@@ -28,7 +28,7 @@ endif()
 idf_component_register(
     SRCS ${devnull}
     PRIV_INCLUDE_DIRS "."
-    PRIV_REQUIRES idf_swift esp_driver_gpio
+    PRIV_REQUIRES idf_swift esp_driver_gpio nvs_flash
 )
 
 # ------------------------------------------------------------------------------
