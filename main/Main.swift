@@ -13,24 +13,36 @@ func main() {
             ret = nvs_flash_init()
         }
 
-        // 2. 블루투스 엔진 시작 및 'MyClicker' 신호 방송(Advertising)
-        ble_helper_init()
+    // 2. 블루투스 GATT 서비스 등록 및 Advertising 시작
+    ble_helper_init()
 
         // 3. 버튼 핀 설정 (GPIO 9번 - ESP32-C6 기본 내장 버튼 또는 0번)
-        let buttonPin = gpio_num_t(9)
+//        let buttonPin = gpio_num_t(9)
+        let buttonPin = gpio_num_t(0)
         gpio_reset_pin(buttonPin)
         gpio_set_direction(buttonPin, GPIO_MODE_INPUT)
         gpio_pullup_en(buttonPin)
 
         print("📡 블루투스 신호 송출 중... 주변 기기에서 'MyClicker'를 찾아보세요!")
 
-        while true {
-            let state = gpio_get_level(buttonPin)
-            if state == 0 {
-                print("🔘 버튼 눌림!")
-            }
-            vTaskDelay(100 / (1000 / UInt32(configTICK_RATE_HZ)))
+    var lastButtonState: Int32 = 1
+
+    while true {
+        let currentState = gpio_get_level(buttonPin)
+
+        // 버튼을 누른 순간 (1 -> 0 변화 감지)
+        if lastButtonState == 1 && currentState == 0 {
+            print("🔘 버튼 눌림 감지! 블루투스로 신호 전송...")
+            ble_helper_send_click()
         }
+
+        lastButtonState = currentState
+        
+        // 20ms 대기 (디바운싱 효과)
+        vTaskDelay(20 / (1000 / UInt32(configTICK_RATE_HZ)))
+    }
+}
+
     
 //    print("클릭커 프로젝트 시작! BOOT 버튼을 눌러보세요.")
 //    
@@ -71,7 +83,7 @@ func main() {
 //        // 너무 빠르게 반복하지 않도록 약간의 딜레이 (디바운싱 효과)
 //        vTaskDelay(50 / (1000 / UInt32(configTICK_RATE_HZ)))
 //    }
-}
+//}
 
 //===----------------------------------------------------------------------===//
 //
