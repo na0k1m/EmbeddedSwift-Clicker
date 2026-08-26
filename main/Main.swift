@@ -4,45 +4,73 @@
 
 @_cdecl("app_main")
 func main() {
-    print("클릭커 프로젝트 시작! BOOT 버튼을 눌러보세요.")
-    
-    // 1. NVS (비휘발성 메모리) 초기화 - 블루투스 필수 조건
-    var ret = nvs_flash_init()
-    if ret == 259 /* ESP_ERR_NVS_NO_FREE_PAGES */ || ret == 260 /* ESP_ERR_NVS_NEW_VERSION_FOUND */ {
-        nvs_flash_erase()
-        ret = nvs_flash_init()
-    }
-    
-    // 2. NimBLE (블루투스 엔진) 초기화
-    nimble_port_init()
+    print("🚀 클릭커 프로젝트 시작! 블루투스 세팅 중...")
 
-//    let buttonPin = gpio_num_t(9) // XIAO ESP32-C6의 BOOT 버튼 핀
-    let buttonPin = gpio_num_t(0)
-    
-    // 1. 버튼 핀을 '입력(Input)' 모드로 설정
-    gpio_reset_pin(buttonPin)
-    gpio_set_direction(buttonPin, GPIO_MODE_INPUT)
-    
-    // 내부 풀업 저항 켜기 (버튼을 안 누르면 1, 누르면 0이 되도록 설정)
-    gpio_set_pull_mode(buttonPin, GPIO_PULLUP_ONLY)
-
-    var wasPressed = false
-
-    // 2. 무한 루프를 돌며 버튼 상태 감시
-    while true {
-        let isPressed = gpio_get_level(buttonPin) == 0 // 0이면 눌린 상태
-
-        if isPressed && !wasPressed {
-            print("👇 버튼이 눌렸습니다.")
-            wasPressed = true
-        } else if !isPressed && wasPressed {
-            print("👆 버튼에서 손을 뗐습니다.")
-            wasPressed = false
+        // 1. NVS (비휘발성 메모리) 초기화
+        var ret = nvs_flash_init()
+        if ret == 259 /* ESP_ERR_NVS_NO_FREE_PAGES */ || ret == 260 /* ESP_ERR_NVS_NEW_VERSION_FOUND */ {
+            nvs_flash_erase()
+            ret = nvs_flash_init()
         }
-        
-        // 너무 빠르게 반복하지 않도록 약간의 딜레이 (디바운싱 효과)
-        vTaskDelay(50 / (1000 / UInt32(configTICK_RATE_HZ)))
-    }
+
+        // 2. 블루투스 엔진 시작 및 'MyClicker' 신호 방송(Advertising)
+        ble_helper_init()
+
+        // 3. 버튼 핀 설정 (GPIO 9번 - ESP32-C6 기본 내장 버튼 또는 0번)
+        let buttonPin = gpio_num_t(9)
+        gpio_reset_pin(buttonPin)
+        gpio_set_direction(buttonPin, GPIO_MODE_INPUT)
+        gpio_pullup_en(buttonPin)
+
+        print("📡 블루투스 신호 송출 중... 주변 기기에서 'MyClicker'를 찾아보세요!")
+
+        while true {
+            let state = gpio_get_level(buttonPin)
+            if state == 0 {
+                print("🔘 버튼 눌림!")
+            }
+            vTaskDelay(100 / (1000 / UInt32(configTICK_RATE_HZ)))
+        }
+    
+//    print("클릭커 프로젝트 시작! BOOT 버튼을 눌러보세요.")
+//    
+//    // 1. NVS (비휘발성 메모리) 초기화 - 블루투스 필수 조건
+//    var ret = nvs_flash_init()
+//    if ret == 259 /* ESP_ERR_NVS_NO_FREE_PAGES */ || ret == 260 /* ESP_ERR_NVS_NEW_VERSION_FOUND */ {
+//        nvs_flash_erase()
+//        ret = nvs_flash_init()
+//    }
+//    
+//    // 2. NimBLE (블루투스 엔진) 초기화
+//    nimble_port_init()
+//
+////    let buttonPin = gpio_num_t(9) // XIAO ESP32-C6의 BOOT 버튼 핀
+//    let buttonPin = gpio_num_t(0)
+//    
+//    // 1. 버튼 핀을 '입력(Input)' 모드로 설정
+//    gpio_reset_pin(buttonPin)
+//    gpio_set_direction(buttonPin, GPIO_MODE_INPUT)
+//    
+//    // 내부 풀업 저항 켜기 (버튼을 안 누르면 1, 누르면 0이 되도록 설정)
+//    gpio_set_pull_mode(buttonPin, GPIO_PULLUP_ONLY)
+//
+//    var wasPressed = false
+//
+//    // 2. 무한 루프를 돌며 버튼 상태 감시
+//    while true {
+//        let isPressed = gpio_get_level(buttonPin) == 0 // 0이면 눌린 상태
+//
+//        if isPressed && !wasPressed {
+//            print("👇 버튼이 눌렸습니다.")
+//            wasPressed = true
+//        } else if !isPressed && wasPressed {
+//            print("👆 버튼에서 손을 뗐습니다.")
+//            wasPressed = false
+//        }
+//        
+//        // 너무 빠르게 반복하지 않도록 약간의 딜레이 (디바운싱 효과)
+//        vTaskDelay(50 / (1000 / UInt32(configTICK_RATE_HZ)))
+//    }
 }
 
 //===----------------------------------------------------------------------===//

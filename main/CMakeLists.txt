@@ -26,9 +26,10 @@ else()
   set(devnull /dev/null)
 endif()
 idf_component_register(
-    SRCS ${devnull}
+#    SRCS ${devnull}
+    SRCS "BLEHelper.c"
     PRIV_INCLUDE_DIRS "."
-    PRIV_REQUIRES idf_swift esp_driver_gpio nvs_flash
+    PRIV_REQUIRES idf_swift esp_driver_gpio nvs_flash bt
 )
 
 # ------------------------------------------------------------------------------
