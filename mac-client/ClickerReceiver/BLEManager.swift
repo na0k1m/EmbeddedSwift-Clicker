@@ -15,17 +15,43 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     var clickerPeripheral: CBPeripheral?
     
     @Published var isConnected = false
+    @Published var isScanningEnabled = true {
+        didSet {
+            if isScanningEnabled {
+                startScanning()
+            } else {
+                stopScanningAndDisconnect()
+            }
+        }
+    }
     
     override init() {
         super.init()
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    // 블루투스가 켜져 있으면 'MyClicker' 서비스(FFE0) 찾기 시작
-    func centralManagerDidUpdateState(_ central: CBCentralManager) {
-        if central.state == .poweredOn {
+    func startScanning() {
+        if centralManager.state == .poweredOn {
             print("🔍 클리커 스캔 시작...")
             centralManager.scanForPeripherals(withServices: [CBUUID(string: "FFE0")], options: nil)
+        }
+    }
+    
+    func stopScanningAndDisconnect() {
+        print("🛑 스캔 중지 및 연결 해제...")
+        centralManager.stopScan()
+        if let peripheral = clickerPeripheral {
+            centralManager.cancelPeripheralConnection(peripheral)
+        }
+        DispatchQueue.main.async {
+            self.isConnected = false
+        }
+    }
+    
+    // 블루투스가 켜져 있으면 'MyClicker' 서비스(FFE0) 찾기 시작
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state == .poweredOn && isScanningEnabled {
+            startScanning()
         }
     }
     
@@ -47,14 +73,20 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     
     // 연결 끊기면 다시 스캔
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        print("❌ 연결 끊김. 다시 스캔합니다...")
-        DispatchQueue.main.async { self.isConnected = false }
-        centralManager.scanForPeripherals(withServices: [CBUUID(string: "FFE0")], options: nil)
+        print("❌ 연결 끊김.")
+        DispatchQueue.main.async { 
+            self.isConnected = false
+        }
+        if isScanningEnabled {
+            print("재스캔합니다...")
+            startScanning()
+        }
     }
     
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let services = peripheral.services {
             for service in services {
+                // FFE1(버튼) 특성 찾기
                 peripheral.discoverCharacteristics([CBUUID(string: "FFE1")], for: service)
             }
         }
@@ -74,10 +106,15 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     
     // 버튼을 눌러서 0x01 데이터가 들어왔을 때 실행할 동작
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
-        if let value = characteristic.value, let firstByte = value.first, firstByte == 1 {
-            print("🔘 클리커 눌림!")
-            DispatchQueue.main.async {
-                self.openYouTubeMusic()
+        guard let value = characteristic.value, let firstByte = value.first else { return }
+        
+        if characteristic.uuid == CBUUID(string: "FFE1") {
+            // 버튼 클릭 데이터 (FFE1)
+            if firstByte == 1 {
+                print("🔘 클리커 눌림!")
+                DispatchQueue.main.async {
+                    self.openYouTubeMusic()
+                }
             }
         }
     }
