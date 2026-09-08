@@ -1,5 +1,21 @@
-build/
+# =========================
+# macOS / General
+# =========================
 .DS_Store
-build/
-managed_components/
-sdkconfig.old
+
+# =========================
+# Firmware (ESP-IDF)
+# =========================
+firmware/build/
+firmware/managed_components/
+firmware/dependencies.lock
+firmware/sdkconfig.old
+
+# =========================
+# Mac Client (Xcode / Swift)
+# =========================
+mac-client/**/*.xcuserdatad/
+mac-client/**/*.xcworkspace/xcuserdata/
+mac-client/.swiftpm/
+mac-client/build/
+mac-client/DerivedData/
