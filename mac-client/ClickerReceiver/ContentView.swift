@@ -101,64 +101,193 @@ struct ContentView: View {
     @StateObject var gitManager = GitManager()
     
     var body: some View {
-        VStack(spacing: 20) {
+        ZStack {
+            // 앱 전체 반응형 배경
+            LinearGradient(gradient: Gradient(colors: [Color(red: 249/255, green: 250/255, blue: 252/255).opacity(0.92), Color(red: 243/255, green: 245/255, blue: 248/255).opacity(0.93), Color(red: 234/255, green: 241/255, blue: 249/255).opacity(0.94)]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
             
-            // 블루투스 활성화/비활성화 토글
-            Toggle(isOn: $bleManager.isScanningEnabled) {
-                Text(bleManager.isScanningEnabled ? "블루투스 켜짐" : "블루투스 꺼짐")
-                    .font(.headline)
+            VStack(spacing: 20) {
+            
+            // 1. Bluetooth Connection Card
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(Color(red: 229/255, green: 240/255, blue: 254/255))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "bluetooth")
+                        .foregroundColor(Color(red: 8/255, green: 124/255, blue: 240/255))
+                        .font(.system(size: 18))
+                }
+                
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Bluetooth")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color(red: 37/255, green: 40/255, blue: 46/255))
+                    
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(bleManager.isConnected ? Color(red: 49/255, green: 188/255, blue: 105/255) : Color.gray)
+                            .frame(width: 6, height: 6)
+                        Text(bleManager.isConnected ? "Connected to Git Clicker Mini" : "Searching for clicker...")
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(red: 119/255, green: 126/255, blue: 137/255))
+                    }
+                }
+                
+                Spacer()
+                
+                Toggle("", isOn: $bleManager.isScanningEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
             }
-            .toggleStyle(.switch)
-            .padding(.horizontal, 40)
+            .padding(14)
+            .background(Color.white.opacity(0.44))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.75), lineWidth: 1)
+            )
             
-            Divider().padding(.horizontal, 20)
-            
-            Text(bleManager.isConnected ? "✅ 클리커 연결됨" : "📡 클리커 찾는 중...")
-                .font(.title)
-                .foregroundColor(bleManager.isConnected ? .green : .gray)
-                .opacity(bleManager.isScanningEnabled ? 1.0 : 0.3) // 꺼져있을 땐 흐리게
-            
-            Divider().padding(.horizontal, 20)
-            
-            // Git 푸시 타겟 UI
+            // 2. Target Git Folders Section
             VStack(alignment: .leading, spacing: 10) {
-                Text("Git 푸시 타겟 폴더")
-                    .font(.headline)
-                
-                List {
-                    ForEach(gitManager.targetFolders, id: \.self) { folder in
-                        Text(folder)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                    }
-                    .onDelete(perform: gitManager.removeFolder)
-                }
-                .frame(height: 100)
-                .border(Color.gray.opacity(0.3))
-                
-                Text("커밋 메시지 (비워두면 자동 시간 입력)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                TextField("예: 디자인 UI 수정", text: $gitManager.customCommitMessage)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                
                 HStack {
-                    Button(action: selectFolder) {
-                        Label("폴더 추가", systemImage: "folder.badge.plus")
-                    }
-                    
+                    Text("Target Git Folders")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color(red: 37/255, green: 40/255, blue: 46/255))
                     Spacer()
-                    
-                    Button(action: { gitManager.pushAll() }) {
-                        Label("테스트 푸시 (ESP버튼)", systemImage: "paperplane.fill")
-                    }
-                    .buttonStyle(.borderedProminent)
+                    Text("\(gitManager.targetFolders.count) folders")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(red: 119/255, green: 126/255, blue: 137/255))
                 }
+                
+                VStack(spacing: 0) {
+                    if gitManager.targetFolders.isEmpty {
+                        Text("No folders added yet.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 20)
+                    } else {
+                        ForEach(Array(gitManager.targetFolders.enumerated()), id: \.element) { index, folder in
+                            HStack(spacing: 12) {
+                                Image(systemName: "folder.fill")
+                                    .foregroundColor(.blue)
+                                    .font(.system(size: 16))
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text((folder as NSString).lastPathComponent) // 폴더명만 간략하게
+                                        .font(.system(size: 11.5, weight: .regular, design: .monospaced))
+                                        .foregroundColor(Color(red: 37/255, green: 40/255, blue: 46/255))
+                                    
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "arrow.branch")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(Color(red: 119/255, green: 126/255, blue: 137/255))
+                                        Text("main")
+                                            .font(.system(size: 10.5))
+                                            .foregroundColor(Color(red: 119/255, green: 126/255, blue: 137/255))
+                                        Text("·")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(Color(red: 147/255, green: 154/255, blue: 165/255))
+                                        Text("Ready to push")
+                                            .font(.system(size: 10.5))
+                                            .foregroundColor(Color(red: 119/255, green: 126/255, blue: 137/255))
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    gitManager.removeFolder(at: IndexSet(integer: index))
+                                }) {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(Color.gray)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            
+                            if index < gitManager.targetFolders.count - 1 {
+                                Divider()
+                                    .padding(.leading, 42)
+                                    .background(Color(red: 220/255, green: 225/255, blue: 231/255).opacity(0.5))
+                            }
+                        }
+                    }
+                }
+                .background(Color.white.opacity(0.72))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color(red: 204/255, green: 211/255, blue: 222/255).opacity(0.5), lineWidth: 1)
+                )
+                
+                Button(action: selectFolder) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus")
+                        Text("Add Folder")
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(red: 37/255, green: 40/255, blue: 46/255))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.59))
+                    .cornerRadius(7)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7)
+                            .stroke(Color(red: 205/255, green: 211/255, blue: 220/255).opacity(0.69), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
             }
-            .padding(.horizontal, 20)
+            
+            // 3. Commit Message Input
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Commit Message (Auto if empty)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(red: 37/255, green: 40/255, blue: 46/255))
+                
+                TextField("Leave empty for an automatic message", text: $gitManager.customCommitMessage)
+                    .font(.system(size: 12))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.72))
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(red: 202/255, green: 209/255, blue: 221/255).opacity(0.56), lineWidth: 1)
+                    )
+                    .textFieldStyle(PlainTextFieldStyle())
+            }
+            
+            // 4. Test Push Button
+            Button(action: { gitManager.pushAll() }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 14))
+                    Text("Test Push")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    LinearGradient(gradient: Gradient(colors: [Color(red: 36/255, green: 148/255, blue: 255/255), Color(red: 8/255, green: 120/255, blue: 237/255)]), startPoint: .top, endPoint: .bottom)
+                )
+                .cornerRadius(9)
+                .shadow(color: Color(red: 8/255, green: 124/255, blue: 240/255).opacity(0.16), radius: 5, x: 0, y: 4)
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 24)
+            .frame(maxWidth: 500, maxHeight: .infinity, alignment: .center) // 세로 중앙 정렬로 변경
         }
-        .frame(width: 450, height: 480)
+        .frame(minWidth: 400, minHeight: 450)
         .onAppear {
             bleManager.onPushTriggered = {
                 gitManager.pushAll()
