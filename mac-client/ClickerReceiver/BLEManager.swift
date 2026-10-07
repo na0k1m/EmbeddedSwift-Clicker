@@ -104,6 +104,9 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         }
     }
     
+    // 콜백 함수 추가
+    var onPushTriggered: (() -> Void)?
+    
     // 버튼을 눌러서 0x01 데이터가 들어왔을 때 실행할 동작
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         guard let value = characteristic.value, let firstByte = value.first else { return }
@@ -113,18 +116,9 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
             if firstByte == 1 {
                 print("🔘 클리커 눌림!")
                 DispatchQueue.main.async {
-                    self.openYouTubeMusic()
+                    self.onPushTriggered?()
                 }
             }
-        }
-    }
-    
-    // 유튜브 뮤직 열기 함수
-    func openYouTubeMusic() {
-        let urlString = "https://youtu.be/PGADim6UzHE?si=i9N4A7R_DM35W87a"
-        
-        if let url = URL(string: urlString) {
-            NSWorkspace.shared.open(url)
         }
     }
 }
