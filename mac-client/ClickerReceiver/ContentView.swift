@@ -16,9 +16,15 @@ class GitManager: ObservableObject {
             UserDefaults.standard.set(targetFolders, forKey: "TargetFolders")
         }
     }
+    @Published var customCommitMessage: String = "" {
+        didSet {
+            UserDefaults.standard.set(customCommitMessage, forKey: "CustomCommitMessage")
+        }
+    }
     
     init() {
         self.targetFolders = UserDefaults.standard.stringArray(forKey: "TargetFolders") ?? []
+        self.customCommitMessage = UserDefaults.standard.string(forKey: "CustomCommitMessage") ?? ""
     }
     
     func addFolder(_ path: String) {
@@ -43,7 +49,14 @@ class GitManager: ObservableObject {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         let dateString = dateFormatter.string(from: Date())
-        let commitMessage = "Auto commit via Clicker: \(dateString)"
+        
+        let commitMessage: String
+        let trimmedCustom = customCommitMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedCustom.isEmpty {
+            commitMessage = "Auto commit via Clicker: \(dateString)"
+        } else {
+            commitMessage = trimmedCustom
+        }
         
         let script = """
         git add .
@@ -123,6 +136,13 @@ struct ContentView: View {
                 .frame(height: 100)
                 .border(Color.gray.opacity(0.3))
                 
+                Text("커밋 메시지 (비워두면 자동 시간 입력)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                TextField("예: 디자인 UI 수정", text: $gitManager.customCommitMessage)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                
                 HStack {
                     Button(action: selectFolder) {
                         Label("폴더 추가", systemImage: "folder.badge.plus")
@@ -138,7 +158,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 20)
         }
-        .frame(width: 450, height: 420)
+        .frame(width: 450, height: 480)
         .onAppear {
             bleManager.onPushTriggered = {
                 gitManager.pushAll()
